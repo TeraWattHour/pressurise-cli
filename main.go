@@ -18,6 +18,11 @@ func printUsage() {
 func main() {
 	args := os.Args[1:]
 
+	if len(args) == 0 {
+		printUsage()
+		return
+	}
+
 	mode := args[0]
 
 	if mode == "build" && len(args) >= 2 {
