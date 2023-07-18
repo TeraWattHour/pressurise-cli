@@ -1,0 +1,25 @@
+---
+!extends ./layout.htm
+
+var isPost = false
+var name string
+
+if r.Method == "POST" {
+    isPost = true
+    name = r.PostFormValue("name")
+}
+---
+
+{{ define "content" }}
+    {{ if not .isPost }}
+        <form method="POST">
+            <input type="text" name="name">
+            <button type="submit">SUBMIT</button>
+        </form>
+    {{ else }}
+        <span>
+            {{ .name }}
+        </span>
+        , ty for your data
+    {{ end }}
+{{ end }}

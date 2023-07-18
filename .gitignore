@@ -1,0 +1,2 @@
+tests/**/pressrelease.go
+pressurise-cli

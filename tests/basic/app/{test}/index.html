@@ -1,0 +1,15 @@
+---
+!extends ../layout.htm
+
+import (
+    "github.com/go-chi/chi/v5"
+)
+
+
+testParam := chi.URLParam(r, "test")
+
+---
+
+{{ define "content" }}
+    {{ .testParam }}
+{{ end }}

@@ -1,0 +1,13 @@
+    "{{ .RouterPath }}": func() http.HandlerFunc {
+        {{ .Vars }}
+        
+        return func(w http.ResponseWriter, r *http.Request) {
+            {{ .RawCode }}
+            
+            __TEMPLATE_DATA := map[string]interface{} {
+                {{ .Declarations }}
+            }
+            __TEMPLATE.Execute(w, __TEMPLATE_DATA)
+        }
+    },
+
