@@ -14,7 +14,22 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var handlerTemplate = template.Must(template.ParseFiles("handler_template.txt"))
+var handlerTemplateRaw = `
+	"{{ .RouterPath }}": func() http.HandlerFunc {
+		{{ .Vars }}
+		
+		return func(w http.ResponseWriter, r *http.Request) {
+			{{ .RawCode }}
+			
+			__TEMPLATE_DATA := map[string]interface{} {
+				{{ .Declarations }}
+			}
+			__TEMPLATE.Execute(w, __TEMPLATE_DATA)
+		}
+	},
+`
+
+var handlerTemplate = template.Must(template.New("handlerTemplate").Parse(handlerTemplateRaw))
 
 type transformed struct {
 	RouterPath string

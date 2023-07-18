@@ -10,7 +10,20 @@ import (
 	"text/template"
 )
 
-var fileTemplate = template.Must(template.ParseFiles("file_template.txt"))
+var fileTemplateRaw = `// Don't edit this file!
+// This file is generated, if you run the generator again
+// all changes made to this file will be lost.
+
+package main
+
+{{ .Imports }}
+
+var pressHandlers = map[string]func() http.HandlerFunc {
+    {{ .Handlers }}
+}`
+
+var fileTemplate = template.Must(template.New("fileTemplate").Parse(fileTemplateRaw))
+
 var fileImports = []*ast.ImportSpec{{
 	Name: &ast.Ident{Name: "html"},
 	Path: &ast.BasicLit{Value: "\"html/template\""},
