@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path"
 )
 
 func printUsage() {
@@ -20,12 +22,13 @@ func main() {
 
 	if mode == "build" && len(args) >= 2 {
 		projectDirectory := args[1]
+		formatGenerated := exec.Command("go", "fmt", path.Join(projectDirectory, "pressrelease.go"))
 
 		if err := buildProject(projectDirectory); err != nil {
 			fmt.Println("project couldn't be built:", err)
 			return
 		}
-
+		formatGenerated.Start()
 	} else {
 		printUsage()
 	}
