@@ -37,9 +37,10 @@ type transformed struct {
 
 	RawCode string
 
-	Imports []*ast.ImportSpec
-	Vars    string
-	Extends string
+	Imports    []*ast.ImportSpec
+	Vars       string
+	Extends    string
+	Components []string
 
 	Declarations string
 
@@ -55,7 +56,7 @@ func transformPageFile(projectPath string, filePath string) (result transformed)
 	result.Path = filePath
 
 	content := string(by)
-	commands := map[string]string{}
+	commands := map[string][]string{}
 
 	htmlStart := 0
 	end := findCodeBlock(string(by))
@@ -71,7 +72,19 @@ func transformPageFile(projectPath string, filePath string) (result transformed)
 				// command statement
 				statement = statement[1:]
 				space := strings.Index(statement, " ")
-				commands[statement[:space]] = statement[space+1:]
+				if space == -1 {
+					continue
+				}
+				commandName := statement[:space]
+				if commandName != "component" && commandName != "extends" {
+					continue
+				}
+				commandValue := statement[space+1:]
+				if commands[commandName] != nil {
+					commands[commandName] = append(commands[commandName], commandValue)
+				} else {
+					commands[commandName] = []string{commandValue}
+				}
 			} else {
 				code += line + "\n"
 			}
@@ -96,9 +109,25 @@ func transformPageFile(projectPath string, filePath string) (result transformed)
 		}
 	}
 
-	result.Vars = fmt.Sprintf(
-		"var __TEMPLATE = html.Must(html.New(\"__TEMPLATE\").Parse(\"%s\")) \n __TEMPLATE = html.Must(__TEMPLATE.Parse(\"%s\"))",
-		escapeDoubleQuotes(removeNewlines(trim(result.Extends))),
+	// parse extended template
+	if result.Extends != "" {
+		result.Vars += fmt.Sprintf(
+			"var __TEMPLATE = html.Must(html.New(\"__TEMPLATE\").Parse(\"%s\")) \n",
+			escapeDoubleQuotes(removeNewlines(trim(result.Extends))),
+		)
+	}
+
+	// parse included components
+	for _, component := range result.Components {
+		result.Vars += fmt.Sprintf(
+			"__TEMPLATE = html.Must(__TEMPLATE.Parse(\"%s\")) \n",
+			escapeDoubleQuotes(removeNewlines(trim(component))),
+		)
+	}
+
+	// parse page content
+	result.Vars += fmt.Sprintf(
+		"__TEMPLATE = html.Must(__TEMPLATE.Parse(\"%s\"))",
 		escapeDoubleQuotes(removeNewlines(trim(content[htmlStart:]))),
 	)
 
@@ -232,9 +261,14 @@ func makeImports(imports []*ast.ImportSpec) (result string) {
 // tries to find a code block in a component file, returns end index.
 // If this index is equal to -1 then the component doesn't have a code block
 func findCodeBlock(content string) int {
+	if len(content) < 3 {
+		return -1
+	}
+
 	if content[:3] != "---" {
 		return -1
 	}
+
 	end := strings.Index(content[3:], "---")
 	if end == -1 {
 		return -1
