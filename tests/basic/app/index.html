@@ -1,5 +1,7 @@
 ---
 !extends ./layout.htm
+!component ./navbar.htm
+!component ./footer.htm
 
 var isPost = false
 var name string
@@ -11,6 +13,8 @@ if r.Method == "POST" {
 ---
 
 {{ define "content" }}
+    {{ template "navbar" }}
+
     {{ if not .isPost }}
         <form method="POST">
             <input type="text" name="name">
@@ -22,4 +26,6 @@ if r.Method == "POST" {
         </span>
         , ty for your data
     {{ end }}
+
+    {{ template "footer" }}
 {{ end }}
