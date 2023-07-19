@@ -10,7 +10,7 @@ func verifyProjectDirectory(directory string) error {
 	stat, err := os.Stat(path.Join(directory, "app"))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) || stat.IsDir() {
-			return errors.New("required directory named `app/` doesn't exist in the project directory")
+			return errors.New("required directory `app/` doesn't exist in the project directory")
 		}
 		return err
 	}
@@ -30,7 +30,7 @@ func scanPagesDirectory(directory string, found []string) ([]string, error) {
 				return nil, err
 			}
 		} else {
-			if entry.Name()[len(entry.Name())-5:] != ".html" {
+			if len(entry.Name()) <= 5 || entry.Name()[len(entry.Name())-5:] != ".html" {
 				continue
 			}
 			p := path.Join(directory, entry.Name())

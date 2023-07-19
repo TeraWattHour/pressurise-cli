@@ -16,16 +16,18 @@ func removeNewlines(str string) string {
 	return strings.ReplaceAll(str, "\n", "")
 }
 
-func pathIntoUrl(projectPath string, filePath string) string {
-	u := strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(filePath, projectPath), ".html"), "index")
-	if len(u) == 0 {
+func pathIntoUrl(projectPath string, filePath string) (x string) {
+	x = strings.TrimPrefix(filePath, projectPath)
+	x = strings.TrimSuffix(x, ".html")
+	x = strings.TrimSuffix(x, "index")
+	if len(x) == 0 {
 		return "/"
 	}
-	if u[0] != '/' {
-		u = "/" + u
+	if x[0] != '/' {
+		x = "/" + x
 	}
-	if len(u) > 1 {
-		u = strings.TrimSuffix(u, "/")
+	if len(x) > 1 {
+		x = strings.TrimSuffix(x, "/")
 	}
-	return u
+	return x
 }
