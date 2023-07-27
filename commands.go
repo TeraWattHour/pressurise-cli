@@ -2,16 +2,14 @@ package main
 
 import (
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
 )
 
 func applyCommands(commands map[string][]string, result transformed) (transformed, error) {
-	currentDirectory := strings.Join(strings.Split(result.Path, "/")[:len(strings.Split(result.Path, "/"))-1], "/")
+	currentDirectory := filepath.Dir(result.Path)
 
 	if len(commands["extends"]) != 0 {
-		templatePath, err := filepath.Abs(path.Join(currentDirectory, commands["extends"][0]))
+		templatePath, err := filepath.Abs(filepath.Join(currentDirectory, commands["extends"][0]))
 		if err != nil {
 			return transformed{}, err
 		}
@@ -24,7 +22,7 @@ func applyCommands(commands map[string][]string, result transformed) (transforme
 
 	if len(commands["component"]) != 0 {
 		for _, component := range commands["component"] {
-			componentPath, err := filepath.Abs(path.Join(currentDirectory, component))
+			componentPath, err := filepath.Abs(filepath.Join(currentDirectory, component))
 			if err != nil {
 				return transformed{}, err
 			}
@@ -35,7 +33,6 @@ func applyCommands(commands map[string][]string, result transformed) (transforme
 
 			result.Components = append(result.Components, string(by))
 		}
-
 	}
 
 	return result, nil

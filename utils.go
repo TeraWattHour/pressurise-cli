@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"strings"
 )
 
@@ -12,22 +13,39 @@ func escapeDoubleQuotes(str string) string {
 	return strings.ReplaceAll(str, "\"", "\\\"")
 }
 
-func removeNewlines(str string) string {
-	return strings.ReplaceAll(str, "\n", "")
+func escapeNewLines(str string) string {
+	return strings.ReplaceAll(str, "\n", "\\n")
 }
 
-func pathIntoUrl(projectPath string, filePath string) (x string) {
-	x = strings.TrimPrefix(filePath, projectPath)
-	x = strings.TrimSuffix(x, ".html")
-	x = strings.TrimSuffix(x, "index")
-	if len(x) == 0 {
-		return "/"
+func filePathIntoRouterPath(path, appPath string) string {
+	path = strings.TrimPrefix(path, appPath)
+	path = strings.TrimSuffix(path, ".html")
+
+	path = strings.TrimSuffix(path, "index")
+
+	path = strings.TrimSuffix(path, "/")
+
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
 	}
-	if x[0] != '/' {
-		x = "/" + x
+
+	return path
+}
+
+func parseFlags(args []string) error {
+	flagset := flag.CommandLine
+	var positionalArgs []string
+	for {
+		if err := flagset.Parse(args); err != nil {
+			return err
+		}
+		args = args[len(args)-flagset.NArg():]
+		if len(args) == 0 {
+			break
+		}
+		positionalArgs = append(positionalArgs, args[0])
+		args = args[1:]
 	}
-	if len(x) > 1 {
-		x = strings.TrimSuffix(x, "/")
-	}
-	return x
+
+	return flagset.Parse(positionalArgs)
 }

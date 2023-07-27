@@ -47,13 +47,13 @@ type transformed struct {
 	Handler string
 }
 
-func transformPageFile(projectPath string, filePath string) (result transformed) {
-	by, err := os.ReadFile(filePath)
+func transformPageFile(path, appPath string) (result transformed) {
+	by, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
-	result.RouterPath = pathIntoUrl(projectPath, filePath)
-	result.Path = filePath
+	result.RouterPath = filePathIntoRouterPath(path, appPath)
+	result.Path = path
 
 	content := string(by)
 	commands := map[string][]string{}
@@ -109,26 +109,28 @@ func transformPageFile(projectPath string, filePath string) (result transformed)
 		}
 	}
 
+	result.Vars += "var __TEMPLATE = html.New(\"__TEMPLATE\")\n"
+
 	// parse extended template
 	if result.Extends != "" {
 		result.Vars += fmt.Sprintf(
-			"var __TEMPLATE = html.Must(html.New(\"__TEMPLATE\").Parse(\"%s\")) \n",
-			escapeDoubleQuotes(removeNewlines(trim(result.Extends))),
+			"__TEMPLATE = html.Must(__TEMPLATE.Parse(\"%s\"))\n",
+			escapeDoubleQuotes(escapeNewLines(trim(result.Extends))),
 		)
 	}
 
 	// parse included components
 	for _, component := range result.Components {
 		result.Vars += fmt.Sprintf(
-			"__TEMPLATE = html.Must(__TEMPLATE.Parse(\"%s\")) \n",
-			escapeDoubleQuotes(removeNewlines(trim(component))),
+			"__TEMPLATE = html.Must(__TEMPLATE.Parse(\"%s\"))\n",
+			escapeDoubleQuotes(escapeNewLines(trim(component))),
 		)
 	}
 
 	// parse page content
 	result.Vars += fmt.Sprintf(
-		"__TEMPLATE = html.Must(__TEMPLATE.Parse(\"%s\"))",
-		escapeDoubleQuotes(removeNewlines(trim(content[htmlStart:]))),
+		"__TEMPLATE = html.Must(__TEMPLATE.Parse(\"%s\"))\n",
+		escapeDoubleQuotes(escapeNewLines(trim(content[htmlStart:]))),
 	)
 
 	var tpl bytes.Buffer

@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"go/ast"
 	"os"
-	"path"
+	"path/filepath"
 	"text/template"
+
+	"golang.org/x/exp/slices"
 )
 
 var fileTemplateRaw = `// Don't edit this file!
@@ -38,9 +40,9 @@ func buildProject(directory string) error {
 		return err
 	}
 
-	appDirectory := path.Join(directory, "app")
+	appDirectory := filepath.Join(directory, "app")
 
-	foundPages, err := scanPagesDirectory(appDirectory, []string{})
+	foundPages, err := scanForPages(appDirectory, []string{})
 	if err != nil {
 		return err
 	}
@@ -48,15 +50,20 @@ func buildProject(directory string) error {
 	transformed := []transformed{}
 
 	for _, page := range foundPages {
-		result := transformPageFile(appDirectory, page)
+		result := transformPageFile(page, appDirectory)
 		transformed = append(transformed, result)
 	}
 
 	imports := fileImports
 	handlers := ""
+	usedHandlers := []string{}
 
 	for _, page := range transformed {
 		handlers += page.Handler
+		if slices.Contains(usedHandlers, page.RouterPath) {
+			return fmt.Errorf("conflicting paths, `%s` path is used at more than one place", page.RouterPath)
+		}
+		usedHandlers = append(usedHandlers, page.RouterPath)
 
 	pageLoop:
 		for _, spec := range page.Imports {
@@ -66,7 +73,7 @@ func buildProject(directory string) error {
 			for _, declared := range imports {
 				if spec.Name != nil && declared.Name == spec.Name {
 					if declared.Path.Value != spec.Path.Value {
-						return fmt.Errorf("conflicting import, import alias `%s` already used for package `%s` and duplicated by `%s`", declared.Name, declared.Path.Value, spec.Path.Value)
+						return fmt.Errorf("conflicting import, import alias `%s` is already being used for package `%s` and is duplicated by `%s`", declared.Name, declared.Path.Value, spec.Path.Value)
 					}
 					break pageLoop
 				}
@@ -83,7 +90,7 @@ func buildProject(directory string) error {
 		panic(err)
 	}
 
-	outputFile := path.Join(directory, "pressrelease.go")
+	outputFile := filepath.Join(directory, "pressrelease.go")
 	if err := os.Remove(outputFile); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err

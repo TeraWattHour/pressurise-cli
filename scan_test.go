@@ -8,7 +8,7 @@ import (
 
 // very nice and comprehensive test xdd
 func TestScanPagesDirectory(t *testing.T) {
-	found, err := scanPagesDirectory("tests/basic/app/", []string{})
+	found, err := scanForPages("tests/basic/app/", []string{})
 	if err != nil {
 		t.Error(err)
 	}
