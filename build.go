@@ -34,17 +34,17 @@ var fileImports = []*ast.ImportSpec{{
 	Path: &ast.BasicLit{Value: "\"net/http\""},
 }}
 
-func buildProject(directory string) error {
+func buildProject(directory string) (string, error) {
 	err := verifyProjectDirectory(directory)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	appDirectory := filepath.Join(directory, "app")
 
 	foundPages, err := scanForPages(appDirectory, []string{})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	transformed := []transformed{}
@@ -61,7 +61,7 @@ func buildProject(directory string) error {
 	for _, page := range transformed {
 		handlers += page.Handler
 		if slices.Contains(usedHandlers, page.RouterPath) {
-			return fmt.Errorf("conflicting paths, `%s` path is used at more than one place", page.RouterPath)
+			return "", fmt.Errorf("conflicting paths, `%s` path is used at more than one place", page.RouterPath)
 		}
 		usedHandlers = append(usedHandlers, page.RouterPath)
 
@@ -73,7 +73,7 @@ func buildProject(directory string) error {
 			for _, declared := range imports {
 				if spec.Name != nil && declared.Name == spec.Name {
 					if declared.Path.Value != spec.Path.Value {
-						return fmt.Errorf("conflicting import, import alias `%s` is already being used for package `%s` and is duplicated by `%s`", declared.Name, declared.Path.Value, spec.Path.Value)
+						return "", fmt.Errorf("conflicting import, import alias `%s` is already being used for package `%s` and is duplicated by `%s`", declared.Name, declared.Path.Value, spec.Path.Value)
 					}
 					break pageLoop
 				}
@@ -93,18 +93,18 @@ func buildProject(directory string) error {
 	outputFile := filepath.Join(directory, "pressrelease.go")
 	if err := os.Remove(outputFile); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return err
+			return "", err
 		}
 	}
 
 	file, err := os.Create(outputFile)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if _, err := file.WriteString(tpl.String()); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return outputFile, nil
 }
